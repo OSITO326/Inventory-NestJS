@@ -17,6 +17,7 @@ model Products {
   id          String                 @id @default(uuid())
   name        String
   description String
+  image       String
   price       Decimal                @db.Decimal(10, 2)
   slug        String
   stock       Int
@@ -33,6 +34,7 @@ model Products {
 model Categories {
   id         String                 @id @default(uuid())
   name       String                 @unique
+  slug       String                 @unique
   products   CategoriesOnProducts[] // relation n to n
   created_at DateTime               @default(now())
   updated_at DateTime               @updatedAt
@@ -43,6 +45,7 @@ model Categories {
 model Brands {
   id         String     @id @default(uuid())
   name       String     @unique
+  slug       String     @unique
   products   Products[] // relation 1 to n
   created_at DateTime   @default(now())
   updated_at DateTime   @updatedAt

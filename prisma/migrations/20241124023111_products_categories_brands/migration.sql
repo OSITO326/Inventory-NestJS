@@ -3,6 +3,7 @@ CREATE TABLE "products" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT NOT NULL,
+    "image" TEXT NOT NULL,
     "price" DECIMAL(10,2) NOT NULL,
     "slug" TEXT NOT NULL,
     "stock" INTEGER NOT NULL,
@@ -18,6 +19,7 @@ CREATE TABLE "products" (
 CREATE TABLE "categories" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -28,6 +30,7 @@ CREATE TABLE "categories" (
 CREATE TABLE "brands" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -48,7 +51,13 @@ CREATE TABLE "categories_on_products" (
 CREATE UNIQUE INDEX "categories_name_key" ON "categories"("name");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "categories_slug_key" ON "categories"("slug");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "brands_name_key" ON "brands"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "brands_slug_key" ON "brands"("slug");
 
 -- AddForeignKey
 ALTER TABLE "products" ADD CONSTRAINT "products_brandsId_fkey" FOREIGN KEY ("brandsId") REFERENCES "brands"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
