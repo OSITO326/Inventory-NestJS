@@ -4,42 +4,42 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateBrandDto } from './dto/create-brand.dto';
-import { UpdateBrandDto } from './dto/update-brand.dto';
+import { CreateTrademarkDto } from './dto/create-trademark.dto';
+import { UpdateTrademarkDto } from './dto/update-trademark.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { convertToSlug } from 'src/common/helpers/convert-to-slug';
 
 @Injectable()
-export class BrandsService {
+export class TrademarksService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createBrandDto: CreateBrandDto) {
+  async create(createTrademarkDto: CreateTrademarkDto) {
     try {
-      const { name } = createBrandDto;
-      const brandExist = await this.prisma.brands.findFirst({
+      const { name } = createTrademarkDto;
+      const trademarkExist = await this.prisma.trademarks.findFirst({
         where: {
           name,
         },
       });
 
-      if (brandExist) {
+      if (trademarkExist) {
         throw new BadRequestException({
           message: 'Trademark with that name has already been registered',
           statusCode: HttpStatus.BAD_REQUEST,
         });
       }
 
-      const slug = convertToSlug(createBrandDto.name);
-      const brand = await this.prisma.brands.create({
+      const slug = convertToSlug(name);
+      const trademark = await this.prisma.trademarks.create({
         data: {
-          ...createBrandDto,
+          ...createTrademarkDto,
           slug,
         },
       });
 
       return {
         message: 'Trademark created successfully',
-        brand,
+        trademark,
       };
     } catch (error) {
       throw new BadRequestException({
@@ -52,10 +52,10 @@ export class BrandsService {
 
   async findAll() {
     try {
-      const brands = await this.prisma.brands.findMany();
+      const trademarks = await this.prisma.trademarks.findMany();
 
       return {
-        brands,
+        trademarks,
       };
     } catch (error) {
       throw new BadRequestException({
@@ -68,18 +68,18 @@ export class BrandsService {
 
   async findOne(term: string) {
     try {
-      const brand = await this.prisma.brands.findFirst({
+      const trademark = await this.prisma.trademarks.findFirst({
         where: {
           OR: [{ id: term }, { slug: term }],
         },
       });
 
-      if (!brand) {
+      if (!trademark) {
         throw new NotFoundException('Trademark not found');
       }
 
       return {
-        brand,
+        trademark,
       };
     } catch (error) {
       throw new BadRequestException({
@@ -90,27 +90,27 @@ export class BrandsService {
     }
   }
 
-  async update(id: string, updateBrandDto: UpdateBrandDto) {
+  async update(id: string, updateTrademarkDto: UpdateTrademarkDto) {
     try {
-      const { name } = updateBrandDto;
-      const brandExist = await this.prisma.brands.findFirst({
+      const { name } = updateTrademarkDto;
+      const trademarkExist = await this.prisma.trademarks.findFirst({
         where: {
           id,
         },
       });
 
-      if (!brandExist) {
+      if (!trademarkExist) {
         throw new NotFoundException('Trademark not found');
       }
 
       if (name) {
         const slug = convertToSlug(name);
-        const brand = await this.prisma.brands.update({
+        const brand = await this.prisma.trademarks.update({
           where: {
             id,
           },
           data: {
-            ...updateBrandDto,
+            ...updateTrademarkDto,
             slug,
           },
         });
@@ -121,16 +121,16 @@ export class BrandsService {
         };
       }
 
-      const brand = await this.prisma.brands.update({
+      const trademark = await this.prisma.trademarks.update({
         where: {
           id,
         },
-        data: updateBrandDto,
+        data: updateTrademarkDto,
       });
 
       return {
         message: 'Trademark updated',
-        brand,
+        trademark,
       };
     } catch (error) {
       throw new BadRequestException({
@@ -143,17 +143,17 @@ export class BrandsService {
 
   async remove(id: string) {
     try {
-      const brandExist = await this.prisma.brands.findFirst({
+      const trademarkExist = await this.prisma.trademarks.findFirst({
         where: {
           id,
         },
       });
 
-      if (!brandExist) {
+      if (!trademarkExist) {
         throw new NotFoundException('Trademark not found');
       }
 
-      const deleteBrand = await this.prisma.brands.delete({
+      const deleteTrademark = await this.prisma.trademarks.delete({
         where: {
           id,
         },
@@ -161,7 +161,7 @@ export class BrandsService {
 
       return {
         message: 'Trademark deleted',
-        deleteBrand,
+        deleteTrademark,
       };
     } catch (error) {
       throw new BadRequestException({
