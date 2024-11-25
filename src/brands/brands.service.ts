@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -13,120 +14,161 @@ export class BrandsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createBrandDto: CreateBrandDto) {
-    const { name } = createBrandDto;
-    const brandExist = await this.prisma.brands.findFirst({
-      where: {
-        name,
-      },
-    });
+    try {
+      const { name } = createBrandDto;
+      const brandExist = await this.prisma.brands.findFirst({
+        where: {
+          name,
+        },
+      });
 
-    if (brandExist) {
-      throw new BadRequestException(
-        'Trademark with that name has already been registered',
-      );
+      if (brandExist) {
+        throw new BadRequestException({
+          message: 'Trademark with that name has already been registered',
+          statusCode: HttpStatus.BAD_REQUEST,
+        });
+      }
+
+      const slug = convertToSlug(createBrandDto.name);
+      const brand = await this.prisma.brands.create({
+        data: {
+          ...createBrandDto,
+          slug,
+        },
+      });
+
+      return {
+        message: 'Trademark created successfully',
+        brand,
+      };
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'An error occurred',
+        error,
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
     }
-
-    const slug = convertToSlug(createBrandDto.name);
-    const brand = await this.prisma.brands.create({
-      data: {
-        ...createBrandDto,
-        slug,
-      },
-    });
-
-    return {
-      message: 'Trademark created successfully',
-      brand,
-    };
   }
 
   async findAll() {
-    const brands = await this.prisma.brands.findMany();
+    try {
+      const brands = await this.prisma.brands.findMany();
 
-    return {
-      brands,
-    };
+      return {
+        brands,
+      };
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'An error occurred',
+        error,
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
+    }
   }
 
   async findOne(term: string) {
-    const brand = await this.prisma.brands.findFirst({
-      where: {
-        OR: [{ id: term }, { slug: term }],
-      },
-    });
+    try {
+      const brand = await this.prisma.brands.findFirst({
+        where: {
+          OR: [{ id: term }, { slug: term }],
+        },
+      });
 
-    if (!brand) {
-      throw new NotFoundException('Trademark not found');
+      if (!brand) {
+        throw new NotFoundException('Trademark not found');
+      }
+
+      return {
+        brand,
+      };
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'An error occurred',
+        error,
+        statusCode: HttpStatus.NOT_FOUND,
+      });
     }
-
-    return {
-      brand,
-    };
   }
 
   async update(id: string, updateBrandDto: UpdateBrandDto) {
-    const { name } = updateBrandDto;
-    const brandExist = await this.prisma.brands.findFirst({
-      where: {
-        id,
-      },
-    });
+    try {
+      const { name } = updateBrandDto;
+      const brandExist = await this.prisma.brands.findFirst({
+        where: {
+          id,
+        },
+      });
 
-    if (!brandExist) {
-      throw new NotFoundException('Trademark not found');
-    }
+      if (!brandExist) {
+        throw new NotFoundException('Trademark not found');
+      }
 
-    if (name) {
-      const slug = convertToSlug(name);
+      if (name) {
+        const slug = convertToSlug(name);
+        const brand = await this.prisma.brands.update({
+          where: {
+            id,
+          },
+          data: {
+            ...updateBrandDto,
+            slug,
+          },
+        });
+
+        return {
+          message: 'Trademark updated',
+          brand,
+        };
+      }
+
       const brand = await this.prisma.brands.update({
         where: {
           id,
         },
-        data: {
-          ...updateBrandDto,
-          slug,
-        },
+        data: updateBrandDto,
       });
 
       return {
         message: 'Trademark updated',
         brand,
       };
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'An error occurred',
+        error,
+        statusCode: HttpStatus.NOT_FOUND,
+      });
     }
-
-    const brand = await this.prisma.brands.update({
-      where: {
-        id,
-      },
-      data: updateBrandDto,
-    });
-
-    return {
-      message: 'Trademark updated',
-      brand,
-    };
   }
 
   async remove(id: string) {
-    const brandExist = await this.prisma.brands.findFirst({
-      where: {
-        id,
-      },
-    });
+    try {
+      const brandExist = await this.prisma.brands.findFirst({
+        where: {
+          id,
+        },
+      });
 
-    if (!brandExist) {
-      throw new NotFoundException('Trademark not found');
+      if (!brandExist) {
+        throw new NotFoundException('Trademark not found');
+      }
+
+      const deleteBrand = await this.prisma.brands.delete({
+        where: {
+          id,
+        },
+      });
+
+      return {
+        message: 'Trademark deleted',
+        deleteBrand,
+      };
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'An error occurred',
+        error,
+        statusCode: HttpStatus.NOT_FOUND,
+      });
     }
-
-    const deleteBrand = await this.prisma.brands.delete({
-      where: {
-        id,
-      },
-    });
-
-    return {
-      message: 'Trademark deleted',
-      deleteBrand,
-    };
   }
 }
