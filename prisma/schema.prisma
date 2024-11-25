@@ -14,52 +14,52 @@ datasource db {
 }
 
 model Products {
-  id          String                 @id @default(uuid())
-  name        String
-  description String
-  image       String
-  price       Decimal                @db.Decimal(10, 2)
-  slug        String
-  stock       Int
-  isAvailable Boolean
-  Brands      Brands                 @relation(fields: [brandsId], references: [id])
-  brandsId    String
-  categories  CategoriesOnProducts[] // relation n to n
-  created_at  DateTime               @default(now())
-  updated_at  DateTime               @updatedAt
+  id           String                 @id @default(uuid())
+  name         String
+  description  String
+  image        String
+  price        Decimal                @db.Decimal(10, 2)
+  slug         String
+  stock        Int
+  isAvailable  Boolean
+  categories   CategoriesOnProducts[] // relation n to n
+  Trademarks   Trademarks             @relation(fields: [trademarksId], references: [id])
+  trademarksId String
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
 
   @@map("products")
 }
 
 model Categories {
-  id         String                 @id @default(uuid())
-  name       String                 @unique
-  slug       String                 @unique
-  products   CategoriesOnProducts[] // relation n to n
-  created_at DateTime               @default(now())
-  updated_at DateTime               @updatedAt
+  id        String                 @id @default(uuid())
+  name      String                 @unique
+  slug      String                 @unique
+  products  CategoriesOnProducts[] // relation n to n
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
 
   @@map("categories")
 }
 
-model Brands {
-  id         String     @id @default(uuid())
-  name       String     @unique
-  slug       String     @unique
-  products   Products[] // relation 1 to n
-  created_at DateTime   @default(now())
-  updated_at DateTime   @updatedAt
+model Trademarks {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  slug      String     @unique
+  products  Products[] // relation 1 to n
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
-  @@map("brands")
+  @@map("trademarks")
 }
 
 model CategoriesOnProducts {
   id           String     @id @default(uuid())
+  createdAt    DateTime   @default(now())
   Products     Products   @relation(fields: [productsId], references: [id])
   productsId   String
   Categories   Categories @relation(fields: [categoriesId], references: [id])
   categoriesId String
-  created_at   DateTime   @default(now())
 
   @@map("categories_on_products")
 }
