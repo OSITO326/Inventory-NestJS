@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -13,120 +14,160 @@ export class CategoriesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createCategoryDto: CreateCategoryDto) {
-    const { name } = createCategoryDto;
-    const categoryExist = await this.prisma.categories.findFirst({
-      where: {
-        name,
-      },
-    });
+    try {
+      const { name } = createCategoryDto;
+      const categoryExist = await this.prisma.categories.findFirst({
+        where: {
+          name,
+        },
+      });
 
-    if (categoryExist) {
-      throw new BadRequestException(
-        'Category with that name has already been registered',
-      );
+      if (categoryExist) {
+        throw new BadRequestException(
+          'Category with that name has already been registered',
+        );
+      }
+
+      const slug = convertToSlug(name);
+      const category = await this.prisma.categories.create({
+        data: {
+          ...createCategoryDto,
+          slug,
+        },
+      });
+
+      return {
+        message: 'Category created successfully',
+        category,
+      };
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'An error occurred',
+        error,
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
     }
-
-    const slug = convertToSlug(name);
-    const category = await this.prisma.categories.create({
-      data: {
-        ...createCategoryDto,
-        slug,
-      },
-    });
-
-    return {
-      message: 'Category created successfully',
-      category,
-    };
   }
 
   async findAll() {
-    const category = await this.prisma.categories.findMany();
+    try {
+      const category = await this.prisma.categories.findMany();
 
-    return {
-      category,
-    };
+      return {
+        category,
+      };
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'An error occurred',
+        error,
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
+    }
   }
 
   async findOne(term: string) {
-    const category = await this.prisma.categories.findFirst({
-      where: {
-        OR: [{ id: term }, { slug: term }],
-      },
-    });
+    try {
+      const category = await this.prisma.categories.findFirst({
+        where: {
+          OR: [{ id: term }, { slug: term }],
+        },
+      });
 
-    if (!category) {
-      throw new NotFoundException('Not found category');
+      if (!category) {
+        throw new NotFoundException('Not found category');
+      }
+
+      return {
+        category,
+      };
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'An error occurred',
+        error,
+        statusCode: HttpStatus.NOT_FOUND,
+      });
     }
-
-    return {
-      category,
-    };
   }
 
   async update(id: string, updateCategoryDto: UpdateCategoryDto) {
-    const { name } = updateCategoryDto;
-    const categoryExist = await this.prisma.categories.findFirst({
-      where: {
-        id,
-      },
-    });
+    try {
+      const { name } = updateCategoryDto;
+      const categoryExist = await this.prisma.categories.findFirst({
+        where: {
+          id,
+        },
+      });
 
-    if (!categoryExist) {
-      throw new NotFoundException('Category not found');
-    }
+      if (!categoryExist) {
+        throw new NotFoundException('Category not found');
+      }
 
-    if (name) {
-      const slug = convertToSlug(name);
+      if (name) {
+        const slug = convertToSlug(name);
+        const category = await this.prisma.categories.update({
+          where: {
+            id,
+          },
+          data: {
+            ...updateCategoryDto,
+            slug,
+          },
+        });
+
+        return {
+          message: 'Category updated',
+          category,
+        };
+      }
+
       const category = await this.prisma.categories.update({
         where: {
           id,
         },
-        data: {
-          ...updateCategoryDto,
-          slug,
-        },
+        data: updateCategoryDto,
       });
 
       return {
         message: 'Category updated',
         category,
       };
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'An error occurred',
+        error,
+        statusCode: HttpStatus.NOT_FOUND,
+      });
     }
-
-    const category = await this.prisma.categories.update({
-      where: {
-        id,
-      },
-      data: updateCategoryDto,
-    });
-
-    return {
-      message: 'Category updated',
-      category,
-    };
   }
 
   async remove(id: string) {
-    const categoryExist = await this.prisma.categories.findFirst({
-      where: {
-        id,
-      },
-    });
+    try {
+      const categoryExist = await this.prisma.categories.findFirst({
+        where: {
+          id,
+        },
+      });
 
-    if (!categoryExist) {
-      throw new NotFoundException('Category not found');
+      if (!categoryExist) {
+        throw new NotFoundException('Category not found');
+      }
+
+      const deleteCategory = await this.prisma.categories.delete({
+        where: {
+          id,
+        },
+      });
+
+      return {
+        message: 'Category deleted',
+        deleteCategory,
+      };
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'An error occurred',
+        error,
+        statusCode: HttpStatus.NOT_FOUND,
+      });
     }
-
-    const deleteCategory = await this.prisma.categories.delete({
-      where: {
-        id,
-      },
-    });
-
-    return {
-      message: 'Category deleted',
-      deleteCategory,
-    };
   }
 }
