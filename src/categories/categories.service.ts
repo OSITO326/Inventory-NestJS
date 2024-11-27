@@ -8,6 +8,7 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { convertToSlug } from 'src/common/helpers/convert-to-slug';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class CategoriesService {
@@ -49,20 +50,55 @@ export class CategoriesService {
     }
   }
 
-  async findAll() {
-    try {
-      const category = await this.prisma.categories.findMany();
+  async findAll(paginationDto: PaginationDto) {
+    const { limit, page, search } = paginationDto;
+    if (!search) {
+      const totalCategories = await this.prisma.categories.count();
+      const lastPage = Math.ceil(totalCategories / limit);
+
+      const categories = await this.prisma.categories.findMany({
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
 
       return {
-        category,
+        categories,
+        meta: {
+          total: totalCategories,
+          page,
+          lastPage,
+        },
       };
-    } catch (error) {
-      throw new BadRequestException({
-        message: 'An error occurred',
-        error,
-        statusCode: HttpStatus.BAD_REQUEST,
-      });
     }
+
+    const totalCategories = await this.prisma.categories.count({
+      where: {
+        OR: [{ id: { contains: search } }, { name: { contains: search } }],
+      },
+    });
+    const lastPage = Math.ceil(totalCategories / limit);
+    const categories = await this.prisma.categories.findMany({
+      where: {
+        OR: [{ id: { contains: search } }, { name: { contains: search } }],
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return {
+      categories,
+      meta: {
+        total: totalCategories,
+        page,
+        lastPage,
+      },
+    };
   }
 
   async findOne(term: string) {
