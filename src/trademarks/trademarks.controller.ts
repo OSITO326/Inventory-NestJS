@@ -6,10 +6,12 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { TrademarksService } from './trademarks.service';
 import { CreateTrademarkDto } from './dto/create-trademark.dto';
 import { UpdateTrademarkDto } from './dto/update-trademark.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Controller('trademarks')
 export class TrademarksController {
@@ -21,8 +23,8 @@ export class TrademarksController {
   }
 
   @Get()
-  findAll() {
-    return this.trademarksService.findAll();
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.trademarksService.findAll(paginationDto);
   }
 
   @Get(':id')

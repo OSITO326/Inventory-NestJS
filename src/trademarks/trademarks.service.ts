@@ -8,6 +8,7 @@ import { CreateTrademarkDto } from './dto/create-trademark.dto';
 import { UpdateTrademarkDto } from './dto/update-trademark.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { convertToSlug } from 'src/common/helpers/convert-to-slug';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class TrademarksService {
@@ -50,12 +51,55 @@ export class TrademarksService {
     }
   }
 
-  async findAll() {
+  async findAll(paginationDto: PaginationDto) {
+    const { limit, page, search } = paginationDto;
     try {
-      const trademarks = await this.prisma.trademarks.findMany();
+      if (!search) {
+        const totalTrademarks = await this.prisma.trademarks.count();
+        const lastPage = Math.ceil(totalTrademarks / limit);
+
+        const trademarks = await this.prisma.trademarks.findMany({
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+
+        return {
+          trademarks,
+          meta: {
+            total: totalTrademarks,
+            page,
+            lastPage,
+          },
+        };
+      }
+
+      const totalTrademarks = await this.prisma.trademarks.count({
+        where: {
+          OR: [{ id: { contains: search } }, { name: { contains: search } }],
+        },
+      });
+      const lastPage = Math.ceil(totalTrademarks / limit);
+      const trademarks = await this.prisma.trademarks.findMany({
+        where: {
+          OR: [{ id: { contains: search } }, { name: { contains: search } }],
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
 
       return {
         trademarks,
+        meta: {
+          total: totalTrademarks,
+          page,
+          lastPage,
+        },
       };
     } catch (error) {
       throw new BadRequestException({
