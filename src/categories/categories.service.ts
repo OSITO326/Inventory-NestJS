@@ -51,12 +51,40 @@ export class CategoriesService {
   }
 
   async findAll(paginationDto: PaginationDto) {
-    const { limit, page, search } = paginationDto;
-    if (!search) {
-      const totalCategories = await this.prisma.categories.count();
-      const lastPage = Math.ceil(totalCategories / limit);
+    try {
+      const { limit, page, search } = paginationDto;
+      if (!search) {
+        const totalCategories = await this.prisma.categories.count();
+        const lastPage = Math.ceil(totalCategories / limit);
 
+        const categories = await this.prisma.categories.findMany({
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+
+        return {
+          categories,
+          meta: {
+            total: totalCategories,
+            page,
+            lastPage,
+          },
+        };
+      }
+
+      const totalCategories = await this.prisma.categories.count({
+        where: {
+          OR: [{ id: { contains: search } }, { name: { contains: search } }],
+        },
+      });
+      const lastPage = Math.ceil(totalCategories / limit);
       const categories = await this.prisma.categories.findMany({
+        where: {
+          OR: [{ id: { contains: search } }, { name: { contains: search } }],
+        },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: {
@@ -72,33 +100,13 @@ export class CategoriesService {
           lastPage,
         },
       };
+    } catch (error) {
+      throw new BadRequestException({
+        message: 'An error occurred',
+        error,
+        statusCode: HttpStatus.BAD_REQUEST,
+      });
     }
-
-    const totalCategories = await this.prisma.categories.count({
-      where: {
-        OR: [{ id: { contains: search } }, { name: { contains: search } }],
-      },
-    });
-    const lastPage = Math.ceil(totalCategories / limit);
-    const categories = await this.prisma.categories.findMany({
-      where: {
-        OR: [{ id: { contains: search } }, { name: { contains: search } }],
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    return {
-      categories,
-      meta: {
-        total: totalCategories,
-        page,
-        lastPage,
-      },
-    };
   }
 
   async findOne(term: string) {
