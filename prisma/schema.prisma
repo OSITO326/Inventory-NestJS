@@ -15,16 +15,17 @@ datasource db {
 
 model Products {
   id           String                 @id @default(uuid())
-  name         String
+  name         String                 @unique
   description  String
   image        String
   price        Decimal                @db.Decimal(10, 2)
-  slug         String
+  slug         String                 @unique
   stock        Int
   isAvailable  Boolean
-  categories   CategoriesOnProducts[] // relation n to n
-  Trademarks   Trademarks             @relation(fields: [trademarksId], references: [id])
-  trademarksId String
+  sku          String                 @unique
+  Categories   CategoriesOnProducts[] // relation n to n
+  Trademarks   Trademarks?            @relation(fields: [trademarksId], references: [id], onDelete: SetNull)
+  trademarksId String?
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
 
@@ -56,10 +57,40 @@ model Trademarks {
 model CategoriesOnProducts {
   id           String     @id @default(uuid())
   createdAt    DateTime   @default(now())
-  Products     Products   @relation(fields: [productsId], references: [id])
+  Products     Products   @relation(fields: [productsId], references: [id], onDelete: Cascade)
   productsId   String
-  Categories   Categories @relation(fields: [categoriesId], references: [id])
+  Categories   Categories @relation(fields: [categoriesId], references: [id], onDelete: Cascade)
   categoriesId String
 
-  @@map("categories_on_products")
+  @@map("categoriesOnProducts")
+}
+
+model Order {
+  id             String         @id @default(uuid())
+  userId         String
+  clientName     String
+  clientLastname String
+  total          Decimal
+  orderDetails   OrderDetails[] // relation with OrderDetails - save to add
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@map("order") // show table in lowercase
+}
+
+model OrderDetails {
+  id               Int      @id @default(autoincrement())
+  productId        String
+  productName      String
+  productPriceSale Float
+  subTotal         Decimal
+  quantity         Int
+  // define relationship
+  Order            Order?   @relation(fields: [orderId], references: [id])
+  // reference
+  orderId          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("orderDetails") // show table in lowercase
 }
